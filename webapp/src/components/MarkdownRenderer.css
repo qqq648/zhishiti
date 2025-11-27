@@ -1,0 +1,89 @@
+/* 代码块样式，贴合截图：顶部灰色栏 + 复制按钮 + 白底正文 */
+
+.mdr-block {
+  margin: 12px 0;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.mdr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f5f6f8;
+  border-bottom: 1px solid #e9e9ec;
+  color: #444;
+}
+
+.mdr-lang {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mdr-copy {
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.mdr-copy:hover { background: #e9eaed; }
+
+.mdr-pre {
+  margin: 0 !important;
+  padding: 14px 18px !important;
+  background: #fff !important;
+  overflow-x: auto;
+}
+
+.mdr-code {
+  color: #1f1f1f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* 语法高亮颜色，参考 VS Code Light+ 接近截图风格 */
+.token.keyword { color: #6f42c1; }
+.token.function { color: #005cc5; }
+.token.class-name { color: #d73a49; }
+.token.string { color: #2e7d32; }
+.token.number { color: #c18401; }
+.token.comment { color: #6a737d; }
+.token.decorator { color: #b32aa9; }
+.token.variable { color: #795548; }
+.token.attr { color: #0d47a1; }
+.token.builtin { color: #D2691E; }
+
+/* 行内代码 */
+.mdr-inline {
+  background: #f5f7fa;
+  border: 1px solid #e3e6ea;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* 提高选择器优先级，覆盖 App.css 中对 messages pre 的默认样式 */
+.messages .mdr-pre { background: #fff !important; border: none !important; padding: 14px 18px !important; }
+
+/* 用户消息中包含代码时，单层卡片布局，去除外层气泡的额外背景视觉 */
+.user-code { margin: 8px 0; }
+
+/* 保留外层气泡，无需将包含代码的消息扁平化 */
+/* 删除原先的 :has(.mdr-block) 规则，统一使用气泡视觉 */
+
+/* 统一宽度由 .bubble.user 自身控制 */
+
+/* 原样展示文本：保留缩进与换行，不进行 Markdown 解析 */
+.mdr-plain {
+  white-space: pre-wrap; /* 保留换行 */
+  font-family: inherit;
+  tab-size: 4;
+}

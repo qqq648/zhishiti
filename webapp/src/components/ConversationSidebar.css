@@ -1,0 +1,164 @@
+/* 侧栏独立样式，遵循设计规范并修复悬停异常 */
+
+.sidebar {
+  background-color: var(--sidebar-bg);
+  padding: 16px;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-x: hidden;
+  width: 280px;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-button,
+.icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  transition: background-color 0.15s ease;
+}
+.menu-button:hover,
+.icon-button:hover {
+  background-color: #e0e0e0;
+}
+
+.sidebar-actions { display: block; margin-bottom: 8px; }
+.sidebar-actions .new-chat {
+  border: none;
+  background: transparent;
+  padding: 0 4px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.sidebar-actions .new-chat svg { width: 22px; height: 22px; }
+
+.sidebar-search { margin-bottom: 12px; }
+.sidebar-search input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.agents h3, .conversations h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.agent-list { display: flex; flex-direction: column; gap: 8px; }
+.agent {
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.agent:hover { background-color: #e8f0fe; }
+.agent.active { background-color: #e8f0fe; border-color: var(--primary-color); font-weight: 500; }
+.agent:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 会话列表：稳定的悬停，无宽度变化，无浮动效果 */
+.conversations ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.conversations li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent; /* 保持稳定，避免 hover 时布局抖动 */
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.conversations li:hover { background-color: #e8e8e8; }
+.conversations li.active { background-color: #e8f0fe; }
+
+.conv {
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 14px;
+  flex-grow: 1;
+  padding: 0;
+}
+
+.conv-actions {
+  display: inline-flex; /* 常驻，避免宽度变化 */
+  align-items: center;
+  gap: 6px;
+  min-width: 56px; /* 更宽以容纳两个图标 */
+  justify-content: flex-end;
+  opacity: 0.6; /* 默认弱化 */
+  transition: opacity 120ms ease;
+}
+.conversations li:hover .conv-actions { opacity: 1; }
+
+.conv-actions .more,
+.conv-actions .pin-indicator {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 4px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px; /* 固定尺寸，避免宽度变化 */
+}
+.conv-actions .more:hover,
+.conv-actions .pin-indicator:hover { background: #e0e0e0; }
+
+/* 置顶图标始终保留，避免 hover 时布局变化 */
+.conversations li .pin-indicator { display: inline-flex; }
+
+/* 点击与键盘可达性优化 */
+.conv:focus-visible,
+.agent:focus-visible,
+.menu-button:focus-visible,
+.icon-button:focus-visible,
+.conv-actions .more:focus-visible,
+.conv-actions .pin-indicator:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 响应式：窄屏压缩为更紧凑的内边距与字体 */
+@media (max-width: 768px) {
+  .sidebar { width: 220px; padding: 12px; }
+  .agent { font-size: 13px; }
+  .conv { font-size: 13px; }
+}
