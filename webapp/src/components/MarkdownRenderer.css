@@ -1,12 +1,13 @@
 /* 代码块样式，贴合截图：顶部灰色栏 + 复制按钮 + 白底正文 */
 
 .mdr-block {
-  margin: 12px 0;
+  margin: 12px 12px; /* 增加左右间距，避免贴边导致右侧边框不明显 */
   border: 1px solid #e6e6e6;
   border-radius: 10px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-sizing: border-box; /* 边框计算在内，确保不被裁切 */
 }
 
 .mdr-header {
@@ -67,11 +68,14 @@
   border: 1px solid #e3e6ea;
   border-radius: 4px;
   padding: 0 4px;
+  display: inline;
+  white-space: break-spaces; /* 支持中文与空格的友好换行 */
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 /* 提高选择器优先级，覆盖 App.css 中对 messages pre 的默认样式 */
 .messages .mdr-pre { background: #fff !important; border: none !important; padding: 14px 18px !important; }
+.messages .mdr-block { margin-left: 8px; margin-right: 8px; }
 
 /* 用户消息中包含代码时，单层卡片布局，去除外层气泡的额外背景视觉 */
 .user-code { margin: 8px 0; }

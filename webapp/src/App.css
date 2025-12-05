@@ -283,7 +283,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding: 0 12.5%; /* 保持原来的左右内边距布局 */
+  padding: 0 25%; /* 增大页面两侧留白 */
 }
 
 .messages {
@@ -310,13 +310,13 @@ html, body, #root {
 }
 
 .message {
-  margin-bottom: 16px;
+  margin-bottom: 16px; /* 全局统一为 16px */
   display: flex;
 }
 
 .bubble {
   max-width: 100%;
-  padding: 8px 16px; /* 增大上下内边距，让内容更舒展 */
+  padding: 12px 16px; /* 增大上下内边距，让内容更舒展 */
   border-radius: 18px;
   line-height: 1.2;
   word-wrap: break-word;
@@ -365,22 +365,59 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   font-weight: 600;
+  /* 轻微下移，使头像上边缘与文本上边缘齐平 */
+  margin-top: 2px;
 }
 .ai-content {
   /* 让 AI 内容更靠近右边界（减去头像与间距共 48px） */
   max-width: calc(100% - 48px);
   flex: 1;
 }
-.ai-actions { display: flex; gap: 8px; margin-top: 8px; }
-.ai-actions button {
-  border: 1px solid var(--border-color);
-  background: #fff;
-  border-radius: 6px;
-  padding: 6px;
-  font-size: 12px;
-  cursor: pointer;
+.ai-content > :first-child { margin-top: 0; }
+.ai-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  height: 24px; /* 固定预留高度，确保图标垂直居中不被裁剪 */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .18s ease, visibility .18s;
+  pointer-events: none; /* 隐藏时不可交互 */
 }
+.message.ai:hover .ai-actions {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.ai-actions.hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.ai-actions button {
+  border: none; /* 去掉边框 */
+  background: transparent;
+  border-radius: 6px;
+  padding: 5px; /* 按钮稍微小一点 */
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex; /* 让图标在按钮内完全居中 */
+  align-items: center;
+  justify-content: center;
+  line-height: 1; /* 防止文字基线影响居中 */
+}
+.ai-actions button:hover { background: #f0f2f5; }
+.ai-actions button svg { width: 14px; height: 14px; display: block; }
 .ai-actions button.active { background: #000; color: #fff; border-color: #000; }
+.ai-actions button[disabled] { opacity: 0.5; cursor: not-allowed; }
+.ai-actions .pager-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
 
 .bubble.streaming {
   border-color: var(--primary-color);

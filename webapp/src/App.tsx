@@ -131,9 +131,30 @@ const PinIcon = () => (
   </svg>
 );
 
+// 翻页箭头图标
+const ChevronLeftIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15 19L8 12L15 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const ChevronRightIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M9 5L16 12L9 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+// 重试图标：带箭头的圆圈
+const RetryIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" fill="none"/>
+    <path d="M16 8L19 8L19 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12 4c3.3 0 6 2.7 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 // New type for displaying messages in the UI
-// The Message type from api.ts is the raw data from the server
-type DisplayMessage = { role: 'user' | 'ai'; text: string };
+// Support AI multi-variant answers for paging
+type DisplayMessage = { role: 'user' | 'ai'; text?: string; variants?: string[]; current?: number };
 type UIConversation = Conversation & { agentId: string; agentName: string };
 
 // 基于 BASE_URL 构造 public 资源路径，确保子路径部署可用
@@ -164,6 +185,8 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [renaming, setRenaming] = useState<{ conv: UIConversation; name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [streamMode, setStreamMode] = useState<'send' | 'retry' | null>(null);
+  const [retryTarget, setRetryTarget] = useState<number | null>(null);
 
   useEffect(() => {
     fetchAgents().then(setAgents);
@@ -238,7 +261,7 @@ function App() {
         const msgs: DisplayMessage[] = [];
         data.forEach(m => {
           if (m.query) msgs.push({ role: 'user', text: m.query });
-          if (m.answer) msgs.push({ role: 'ai', text: m.answer });
+          if (m.answer) msgs.push({ role: 'ai', variants: [m.answer], current: 0 });
         });
         setMessages(msgs);
       });
@@ -261,6 +284,15 @@ function App() {
   }, [messages, streaming]);
 
   // containsCodeBlock 在下文统一定义一次（靠近渲染逻辑）
+
+  // 获取显示文本（支持 AI 多版本）
+  const getMessageText = (m: DisplayMessage): string => {
+    if (Array.isArray(m.variants)) {
+      const idx = m.current ?? 0;
+      return m.variants[idx] ?? '';
+    }
+    return m.text ?? '';
+  };
 
   const send = () => {
     if (!currentAgent || !query.trim()) return;
@@ -292,6 +324,8 @@ function App() {
     }
     setStreaming(true);
     setAnswerStarted(false);
+    setStreamMode('send');
+    setRetryTarget(null);
 
     streamChat(
       currentAgent.id,
@@ -310,6 +344,7 @@ function App() {
           console.error('SSE error:', errMsg);
           setMessages(prev => [...prev, { role: 'ai', text: `抱歉，出错了：${errMsg}` }]);
           setStreaming(false);
+          setStreamMode(null);
           return;
         }
 
@@ -327,18 +362,123 @@ function App() {
           const answerText: string = String(event.answer);
           setAnswerStarted(true);
           setMessages(prev => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage && lastMessage.role === 'ai') {
-              const updatedMessages = [...prev];
-              updatedMessages[updatedMessages.length - 1] = { ...lastMessage, text: lastMessage.text + answerText };
-              return updatedMessages;
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last && last.role === 'ai') {
+              // Append to current variant
+              if (Array.isArray(last.variants)) {
+                const idx = last.current ?? 0;
+                const nextVariants = [...last.variants];
+                nextVariants[idx] = (nextVariants[idx] || '') + answerText;
+                updated[updated.length - 1] = { ...last, variants: nextVariants };
+                return updated;
+              } else {
+                // Convert text to variants first
+                updated[updated.length - 1] = { role: 'ai', variants: [ (last.text || '') + answerText ], current: 0 };
+                return updated;
+              }
             }
-            return [...prev, { role: 'ai', text: answerText }];
+            // First chunk: create an AI message with first variant
+            return [...updated, { role: 'ai', variants: [answerText], current: 0 }];
           });
         }
 
         if (event.event === 'end') {
           setStreaming(false);
+          setStreamMode(null);
+          setRetryTarget(null);
+        }
+      }
+    );
+  };
+
+  // 重试：基于某条 AI 消息之前的最近一条用户输入重新生成回复
+  const retryFrom = (aiIndex: number) => {
+    if (!currentAgent || streaming) return;
+    // 找到该 AI 消息之前最近的用户消息
+    let j = aiIndex - 1;
+    let userText: string | null = null;
+    while (j >= 0) {
+      const m = messages[j];
+      if (m && m.role === 'user') { userText = getMessageText(m); break; }
+      j--;
+    }
+    if (!userText) {
+      // 兜底：使用最后一条用户消息
+      for (let k = messages.length - 1; k >= 0; k--) {
+        if (messages[k].role === 'user') { userText = getMessageText(messages[k]); break; }
+      }
+    }
+    if (!userText || !userText.trim()) return;
+
+    // 在目标 AI 气泡中新建一个空版本，并切换到该版本；同时截断其后的历史消息
+    setMessages(prev => {
+      const head = prev.slice(0, aiIndex + 1);
+      const target = head[aiIndex];
+      if (!target || target.role !== 'ai') return prev;
+      const variants = Array.isArray(target.variants) ? [...target.variants] : [(target.text || '')];
+      variants.push('');
+      head[aiIndex] = { role: 'ai', variants, current: variants.length - 1 };
+      return head;
+    });
+
+    setStreaming(true);
+    setAnswerStarted(false);
+    setStreamMode('retry');
+    setRetryTarget(aiIndex);
+    const targetIdx = aiIndex; // 捕获目标索引，避免闭包读取到旧状态
+
+    streamChat(
+      currentAgent.id,
+      {
+        query: userText,
+        inputs: inputs || {},
+        conversation_id: currentConvId || undefined,
+        user: 'test-user',
+        auto_generate_name: false,
+      },
+      event => {
+        if ((event as any)?.error || event.event === 'error') {
+          const raw = (event as any);
+          const errMsg = raw?.error || raw?.message || raw?.detail || `HTTP ${raw?.status || ''}` || '未知错误';
+          console.error('SSE error:', errMsg);
+          setMessages(prev => [...prev, { role: 'ai', variants: [`抱歉，出错了：${errMsg}`], current: 0 }]);
+          setStreaming(false);
+          setStreamMode(null);
+          setRetryTarget(null);
+          return;
+        }
+
+        if (event.conversation_id) {
+          setCurrentConvId(event.conversation_id);
+          if (!conversations.some(c => c.id === event.conversation_id)) {
+            fetchConversations(currentAgent.id, 'test-user').then(({ data }) => setConversations(data));
+            refreshAllConversations();
+          }
+        }
+
+        if (event.answer != null) {
+          const answerText: string = String(event.answer);
+          setAnswerStarted(true);
+          setMessages(prev => {
+            const updated = [...prev];
+            // 写入目标气泡的当前版本（使用本地捕获的索引，避免闭包旧值）
+            const msg = updated[targetIdx];
+            if (msg && msg.role === 'ai') {
+              const idx = msg.current ?? 0;
+              const variants = Array.isArray(msg.variants) ? [...msg.variants] : [(msg.text || '')];
+              variants[idx] = (variants[idx] || '') + answerText;
+              updated[targetIdx] = { role: 'ai', variants, current: idx };
+              return updated;
+            }
+            return updated;
+          });
+        }
+
+        if (event.event === 'end') {
+          setStreaming(false);
+          setStreamMode(null);
+          setRetryTarget(null);
         }
       }
     );
@@ -465,7 +605,7 @@ function App() {
               <div key={i} className={`message ${msg.role}`}>
                 <div className={`bubble ${msg.role}`}>
                   {/* 用户消息始终原样显示，确保缩进与换行不变 */}
-                  <MarkdownRenderer text={msg.text} verbatim={true} />
+                  <MarkdownRenderer text={getMessageText(msg)} verbatim={true} />
                 </div>
               </div>
             ) : (
@@ -473,9 +613,53 @@ function App() {
                 <div className="ai-row">
                   <div className="ai-avatar">{currentAgent ? (currentAgent.name?.[0] || 'A') : 'A'}</div>
                   <div className="ai-content">
-                    <MarkdownRenderer text={msg.text} />
-                    {(!streaming || i !== messages.length - 1) && (
-                      <div className="ai-actions">
+                    <MarkdownRenderer text={getMessageText(msg)} />
+                    {/* 在重试时，针对目标气泡隐藏操作；发送时隐藏最后一条的操作 */}
+                    {(() => {
+                      const hideActions = streaming && ((streamMode === 'send' && i === messages.length - 1) || (streamMode === 'retry' && i === retryTarget));
+                      return !hideActions;
+                    })() && (
+                      <div className={`ai-actions ${streaming ? 'hidden' : ''}`}>
+                        {/* 翻页控件：仅当存在至少两个版本时显示 */}
+                        {Array.isArray(msg.variants) && msg.variants.length > 1 && (
+                          <>
+                            <button
+                              title="上一版"
+                              disabled={(msg.current ?? 0) <= 0}
+                              onClick={() => {
+                                setMessages(prev => {
+                                  const updated = [...prev];
+                                  const m = updated[i];
+                                  if (m && m.role === 'ai' && Array.isArray(m.variants)) {
+                                    const cur = m.current ?? 0;
+                                    updated[i] = { role: 'ai', variants: m.variants, current: Math.max(cur - 1, 0) };
+                                  }
+                                  return updated;
+                                });
+                              }}
+                            >
+                              <ChevronLeftIcon />
+                            </button>
+                            <span className="pager-index">{((msg.current ?? 0) + 1) + '/' + msg.variants.length}</span>
+                            <button
+                              title="下一版"
+                              disabled={(msg.current ?? 0) >= (msg.variants.length - 1)}
+                              onClick={() => {
+                                setMessages(prev => {
+                                  const updated = [...prev];
+                                  const m = updated[i];
+                                  if (m && m.role === 'ai' && Array.isArray(m.variants)) {
+                                    const cur = m.current ?? 0;
+                                    updated[i] = { role: 'ai', variants: m.variants, current: Math.min(cur + 1, m.variants.length - 1) };
+                                  }
+                                  return updated;
+                                });
+                              }}
+                            >
+                              <ChevronRightIcon />
+                            </button>
+                          </>
+                        )}
                         <button
                           title="答的好"
                           className={feedback[i] === 'up' ? 'active' : ''}
@@ -490,8 +674,11 @@ function App() {
                         >
                           <ThumbDownIcon />
                         </button>
-                        <button title="分享" onClick={() => console.log('share', i)}><ShareIcon /></button>
-                        <button title={copied[i] ? '已复制' : '复制'} onClick={() => handleCopy(msg.text, i)}>
+                        <button title="重试" disabled={!currentAgent || streaming} onClick={() => retryFrom(i)}>
+                          <RetryIcon />
+                        </button>
+                        <button title="分享" onClick={() => console.log('share', getMessageText(msg))}><ShareIcon /></button>
+                        <button title={copied[i] ? '已复制' : '复制'} onClick={() => handleCopy(getMessageText(msg), i)}>
                           {copied[i] ? <CheckIcon /> : <CopyIcon />}
                         </button>
                       </div>
@@ -501,7 +688,8 @@ function App() {
               </div>
             )
           ))}
-          {streaming && !answerStarted && (
+          {/* 仅在发送模式下显示底部加载占位；重试模式不显示，避免双头像 */}
+          {streaming && !answerStarted && streamMode === 'send' && (
             <div className="message ai">
               <div className="ai-row">
                 <div className="ai-avatar">{currentAgent ? (currentAgent.name?.[0] || 'A') : 'A'}</div>

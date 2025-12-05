@@ -142,14 +142,28 @@ export default function MarkdownRenderer({ text, verbatim }: Props) {
         pre({ children }: any) {
           return <>{children}</>;
         },
-        code(props: any) {
-          const raw = String((props && props.children) || '');
-          const cls = (props && props.className) || '';
-          const lang = cls.replace('language-', '') || 'python';
-          const isInline = !!(props && props.inline);
-          if (isInline) {
+        // 正确区分行内代码与块级代码：
+        // - 行内（`...` 或 ``...``）始终渲染为行内代码
+        // - 仅当是带语言标记的 fenced 代码块，或内容包含换行时，才渲染为代码块
+        //   这样可以避免缩进触发的“伪代码块”误判。
+        code({ inline, className, children }: { inline?: boolean; className?: string; children?: any }) {
+          const raw = String(children || '').replace(/\n$/, '');
+          const cls = className || '';
+          const m = cls.match(/language-(\w+)/);
+          const lang = m ? m[1] : 'plaintext';
+
+          if (inline) {
             return <code className="mdr-inline">{raw}</code>;
           }
+
+          const isFencedWithLang = !!m; // 通常来自 ```lang
+          const hasNewline = raw.includes('\n');
+          const shouldRenderBlock = isFencedWithLang || hasNewline;
+          if (!shouldRenderBlock) {
+            // 无语言标记且仅一行的“代码块”按行内代码处理，符合“只有 ``` 才是块级”的诉求
+            return <code className="mdr-inline">{raw}</code>;
+          }
+
           return <CodeBlock code={raw} language={lang} />;
         }
       }}
