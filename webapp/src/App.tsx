@@ -3,57 +3,9 @@ import MarkdownRenderer from './components/MarkdownRenderer';
 import './App.css';
 import ConversationSidebar from './components/ConversationSidebar';
 import type { Agent, Conversation } from './api';
-import { fetchAgents, fetchConversations, fetchMessages, streamChat, deleteConversation, renameConversation, fetchParameters } from './api';
+import { fetchAgents, fetchConversations, fetchMessages, streamChat, deleteConversation, renameConversation, fetchParameters, sendChatBlocking, login, register, setAuthToken, getAuthToken, getAuthUser, logout } from './api';
 
-const SendIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 20.5V3.5L22 12L3 20.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-  </svg>
-);
-
-const DeleteIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const MenuIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 12H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const AgentIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
-    <path d="M20 20L17 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
-
-const PenSquareIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
-    <path d="M8 16L16.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M8 16H11L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
+ 
 
 const ArrowUpIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -110,26 +62,20 @@ const CopyIcon = () => (
   </svg>
 );
 
+const PencilIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const CheckIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M5 13L9 17L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-const DotsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="5" cy="12" r="2" fill="currentColor"/>
-    <circle cx="12" cy="12" r="2" fill="currentColor"/>
-    <circle cx="19" cy="12" r="2" fill="currentColor"/>
-  </svg>
-);
-
-const PinIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 3L16 11L13 14L10 11L8 13L5 10L8 7L5 4L8 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M13 14L11 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
+ 
 
 // 翻页箭头图标
 const ChevronLeftIcon = () => (
@@ -158,10 +104,17 @@ type DisplayMessage = { role: 'user' | 'ai'; text?: string; variants?: string[];
 type UIConversation = Conversation & { agentId: string; agentName: string };
 
 // 基于 BASE_URL 构造 public 资源路径，确保子路径部署可用
-const BASE_URL: string = (import.meta as any)?.env?.BASE_URL || '/';
+const BASE_URL: string = import.meta.env.BASE_URL || '/';
 const LOGO_URL: string = (BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/') + 'logo.png';
+const LOGIN_BG_URL: string = (import.meta.env.VITE_LOGIN_BG as string)
+  || ((BASE_URL.endsWith('/') ? BASE_URL : BASE_URL + '/') + 'login-bg.jpg');
 
 function App() {
+  const [authed, setAuthed] = useState<boolean>(!!getAuthToken());
+  const [authUser, setAuthUser] = useState<string | null>(getAuthUser());
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(null);
@@ -180,17 +133,41 @@ function App() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; conv: UIConversation } | null>(null);
   const [pendingSelection, setPendingSelection] = useState<{ agentId: string; convId: string } | null>(null);
   const [copied, setCopied] = useState<Record<number, boolean>>({});
-  const [parameters, setParameters] = useState<any | null>(null);
-  const [inputs, setInputs] = useState<Record<string, any>>({});
+  const [parameters, setParameters] = useState<{ user_input_form?: { variable: string; label?: string; required?: boolean; default?: string }[] } | null>(null);
+  const [inputs, setInputs] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [renaming, setRenaming] = useState<{ conv: UIConversation; name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [streamMode, setStreamMode] = useState<'send' | 'retry' | null>(null);
   const [retryTarget, setRetryTarget] = useState<number | null>(null);
+  // 结束事件处理的防重标记（用于避免 message_end 与 end 双分支重复处理）
+  const endHandledRef = useRef<boolean>(false);
+  const fallbackAddedRef = useRef<boolean>(false);
+  const [showProfile, setShowProfile] = useState<boolean>(false);
+  const [agentsError, setAgentsError] = useState<string | null>(null);
+  const convRefreshTimerRef = useRef<number | null>(null);
+  const scheduleConvRefresh = (agentId: string) => {
+    if (convRefreshTimerRef.current != null) return;
+    convRefreshTimerRef.current = window.setTimeout(async () => {
+      try {
+        const { data } = await fetchConversations(agentId);
+        setConversations(data);
+      } finally {
+        convRefreshTimerRef.current = null;
+      }
+    }, 500);
+  };
 
   useEffect(() => {
-    fetchAgents().then(setAgents);
-  }, []);
+    if (authed) {
+      fetchAgents()
+        .then((list) => { setAgents(list); setAgentsError(null); })
+        .catch(() => { setAgents([]); setAgentsError('load_failed'); });
+    } else {
+      setAgents([]);
+      setAgentsError(null);
+    }
+  }, [authed]);
 
   useEffect(() => {
     const handler = () => setContextMenu(null);
@@ -200,19 +177,19 @@ function App() {
 
   useEffect(() => {
     if (currentAgent) {
-      fetchConversations(currentAgent.id, 'test-user').then(({ data }) => setConversations(data));
+      fetchConversations(currentAgent.id).then(({ data }) => setConversations(data));
       fetchParameters(currentAgent.id)
         .then((p) => {
           setParameters(p);
-          const defaults: Record<string, any> = {};
+          const defaults: Record<string, string> = {};
           const form = Array.isArray(p?.user_input_form) ? p.user_input_form : [];
-          form.forEach((f: any) => {
-            if (typeof f?.default !== 'undefined') defaults[f.variable] = f.default;
+          form.forEach((f) => {
+            if (typeof f?.default !== 'undefined') defaults[f.variable] = String(f.default ?? '');
           });
           setInputs(defaults);
         })
         .catch(() => { setParameters(null); setInputs({}); });
-      if (!pendingSelection) {
+      if (!pendingSelection && !currentConvId) {
         setCurrentConvId(null);
         setMessages([]);
       }
@@ -225,7 +202,7 @@ function App() {
       if (!agents.length) { setAllConversations([]); return; }
       const lists = await Promise.all(
         agents.map(a =>
-          fetchConversations(a.id, 'test-user')
+          fetchConversations(a.id)
             .then(({ data }) => data.map(c => ({ ...c, agentId: a.id, agentName: a.name })))
             .catch(() => [])
         )
@@ -235,11 +212,18 @@ function App() {
     loadAll();
   }, [agents]);
 
+  useEffect(() => {
+    if (authed && agents.length && !currentAgent) {
+      const next = agents.find(a => a.hasKey);
+      if (next) setCurrentAgent(next);
+    }
+  }, [authed, agents, currentAgent]);
+
   const refreshAllConversations = async () => {
     if (!agents.length) { setAllConversations([]); return; }
     const lists = await Promise.all(
       agents.map(a =>
-        fetchConversations(a.id, 'test-user')
+        fetchConversations(a.id)
           .then(({ data }) => data.map(c => ({ ...c, agentId: a.id, agentName: a.name })))
           .catch(() => [])
       )
@@ -256,8 +240,9 @@ function App() {
   }, [currentAgent, pendingSelection]);
 
   useEffect(() => {
-    if (currentAgent && currentConvId) {
-      fetchMessages(currentAgent.id, currentConvId, 'test-user').then(({ data }) => {
+    // 避免在流式生成过程中拉取历史消息覆盖本地状态，导致“首条消息没反应”
+    if (currentAgent && currentConvId && !streaming) {
+      fetchMessages(currentAgent.id, currentConvId).then(({ data }) => {
         const msgs: DisplayMessage[] = [];
         data.forEach(m => {
           if (m.query) msgs.push({ role: 'user', text: m.query });
@@ -266,7 +251,7 @@ function App() {
         setMessages(msgs);
       });
     }
-  }, [currentAgent, currentConvId]);
+  }, [currentAgent, currentConvId, streaming]);
 
   useEffect(() => {
     const end = messagesEndRef.current;
@@ -276,9 +261,9 @@ function App() {
       const scroller = document.querySelector('.chat') as HTMLElement | null;
       if (scroller) scroller.scrollTop = scroller.scrollHeight;
     }
-    const prism = (window as any).Prism;
-    if (prism) {
-      const container = document.querySelector('.messages') as HTMLElement | null;
+    const prism = (window as unknown as { Prism?: { highlightAllUnder?: (el: Element) => void } }).Prism;
+    if (prism?.highlightAllUnder) {
+      const container = document.querySelector('.messages');
       if (container) prism.highlightAllUnder(container);
     }
   }, [messages, streaming]);
@@ -293,24 +278,43 @@ function App() {
     }
     return m.text ?? '';
   };
+  const getAgentGuide = (ag: Agent | null): { title: string; desc: string; hints: string[] } | null => {
+    if (!ag) return null;
+    const id = ag.id;
+    if (id === 'jiaowu') {
+      return { title: '我是智能教务', desc: '我可帮助你查询课程、考试与选课相关信息', hints: ['查询本学期课程安排', '请帮我推荐可选修课程', '查看考试时间与地点'] };
+    }
+    if (id === 'tuijian') {
+      return { title: '我是资源检索与推荐', desc: '我可从海量资源中检索并推荐你需要的内容', hints: ['推荐与机器学习相关的公开课', '搜索最新的教育技术论文', '按主题检索学习资源'] };
+    }
+    if (id === 'wenxian') {
+      return { title: '我是智能文献服务', desc: '我可帮你检索学术文献、整理综述与发现经典作品', hints: ['检索教育评估领域的经典文献', '生成一份文献综述提纲', '查找某作者的代表作'] };
+    }
+    if (id === 'zhujiao') {
+      return { title: '我是智能助教/学伴', desc: '我可协助你制定计划、答疑与学习提醒', hints: ['制定一周学习计划', '线性代数复习的关键点有哪些', '提醒我每天的学习目标'] };
+    }
+    return { title: ag.name || '智能体', desc: '我可以帮助你解决相关问题', hints: ['我能做什么', '给我一个示例问题', '如何快速开始'] };
+  };
 
   const send = () => {
-    if (!currentAgent || !query.trim()) return;
+    if (!currentAgent) return;
+    const q = query.trim();
+    if (!q) return;
 
     // Validate required parameters for current agent
     const form = Array.isArray(parameters?.user_input_form) ? parameters!.user_input_form : [];
-    const required = form.filter((f: any) => !!f?.required);
-    const missing = required.filter((f: any) => {
+    const required = form.filter((f) => !!f?.required);
+    const missing = required.filter((f) => {
       const v = inputs[f.variable];
       return v == null || String(v).trim() === '';
     });
     if (missing.length) {
-      const names = missing.map((f: any) => f.label || f.variable).join('、');
+      const names = missing.map((f) => f.label || f.variable).join('、');
       setMessages(prev => [...prev, { role: 'ai', text: `请先填写以下参数：${names}` }]);
       return;
     }
 
-    const userMessage: DisplayMessage = { role: 'user', text: query };
+    const userMessage: DisplayMessage = { role: 'user', text: q };
     setMessages(prev => [...prev, userMessage]);
     setQuery('');
     // 发送后将输入框折叠到单行并滚到底部
@@ -326,23 +330,27 @@ function App() {
     setAnswerStarted(false);
     setStreamMode('send');
     setRetryTarget(null);
+    endHandledRef.current = false;
+    fallbackAddedRef.current = false;
 
     streamChat(
       currentAgent.id,
       {
-        query,
+        query: q,
         inputs: inputs || {},
         conversation_id: currentConvId || undefined,
-        user: 'test-user',
+        user: authUser || undefined,
         auto_generate_name: !currentConvId, // 首次消息自动生成会话名
       },
       event => {
-        // Handle both explicit event=error and payloads that carry error without event
-        if ((event as any)?.error || event.event === 'error') {
-          const raw = (event as any);
-          const errMsg = raw?.error || raw?.message || raw?.detail || `HTTP ${raw?.status || ''}` || '未知错误';
+        // 错误处理：兼容显式 error 事件以及仅携带 code/message 的对象
+        if ((event?.error) || event.event === 'error' || (event?.code) || (typeof event?.status === 'number' && event.status >= 400)) {
+          const raw = event;
+          const errMsg = raw?.message || raw?.error || raw?.detail || `HTTP ${raw?.status || ''}` || '未知错误';
+          const errCode = raw?.code ? `（${raw.code}）` : '';
           console.error('SSE error:', errMsg);
-          setMessages(prev => [...prev, { role: 'ai', text: `抱歉，出错了：${errMsg}` }]);
+          setMessages(prev => [...prev, { role: 'ai', text: `抱歉，出错了${errCode}：${errMsg}` }]);
+          fallbackAddedRef.current = true; // 已显示错误，不再追加“没有内容”兜底
           setStreaming(false);
           setStreamMode(null);
           return;
@@ -351,10 +359,12 @@ function App() {
         if (event.conversation_id) {
           setCurrentConvId(event.conversation_id);
           if (!conversations.some(c => c.id === event.conversation_id)) {
-            // A new conversation is created, refresh the conversation list
-            fetchConversations(currentAgent.id, 'test-user').then(({ data }) => setConversations(data));
-            // Also refresh aggregated list
-            refreshAllConversations();
+            const placeholderId = event.conversation_id!;
+            setConversations(prev => {
+              if (prev.some(c => c.id === placeholderId)) return prev;
+              return [{ id: placeholderId, name: '未命名', updated_at: Date.now() }, ...prev];
+            });
+            scheduleConvRefresh(currentAgent.id);
           }
         }
 
@@ -383,10 +393,71 @@ function App() {
           });
         }
 
-        if (event.event === 'end') {
+        // 显式处理 message_end，兼容上游事件名
+        if (event.event === 'message_end') {
+          if (endHandledRef.current) return;
+          endHandledRef.current = true;
           setStreaming(false);
           setStreamMode(null);
           setRetryTarget(null);
+          if (!answerStarted && !fallbackAddedRef.current) {
+            // 若未收到任何文本，给出友好提示，避免“没反应”的感知
+            setMessages(prev => [...prev, { role: 'ai', text: '这次没有生成可显示的内容。' }]);
+            fallbackAddedRef.current = true;
+          }
+          if (currentAgent) {
+            scheduleConvRefresh(currentAgent.id);
+          }
+          return; // 提前返回，避免在后续 end 分支重复处理
+        }
+
+        if (event.event === 'end') {
+          if (endHandledRef.current) return;
+          endHandledRef.current = true;
+          setStreaming(false);
+          setStreamMode(null);
+          setRetryTarget(null);
+          // 流结束后，保险刷新一次会话列表，防止没有返回 conversation_id 时列表不同步
+          if (!answerStarted && !fallbackAddedRef.current) {
+            // 流直接结束但未产生内容的情况，补充友好提示
+            setMessages(prev => [...prev, { role: 'ai', text: '这次没有生成可显示的内容。' }]);
+            fallbackAddedRef.current = true;
+            // 兜底：发起一次阻塞模式请求，尝试获取完整结果与会话ID
+            (async () => {
+              try {
+                const block = await sendChatBlocking(currentAgent!.id, {
+                  query: q,
+                  inputs: inputs || {},
+                  conversation_id: currentConvId || undefined,
+                  auto_generate_name: !currentConvId,
+                });
+                if ((block?.error) || (block?.code)) {
+                  const msg = block?.message || block?.error || '未知错误';
+                  const code = block?.code ? `（${String(block.code)}）` : '';
+                  setMessages(prev => [...prev, { role: 'ai', text: `抱歉，出错了${code}：${msg}` }]);
+                } else if (block && block.answer) {
+                  setMessages(prev => {
+                    const updated = [...prev];
+                    const last = updated[updated.length - 1];
+                    if (last && last.role === 'ai') {
+                      updated[updated.length - 1] = { role: 'ai', variants: [String(block.answer)], current: 0 };
+                    } else {
+                      updated.push({ role: 'ai', variants: [String(block.answer)], current: 0 });
+                    }
+                    return updated;
+                  });
+                }
+                if (block && block.conversation_id) {
+                  setCurrentConvId(block.conversation_id);
+                  fetchConversations(currentAgent!.id).then(({ data }) => setConversations(data));
+                  refreshAllConversations();
+                }
+              } catch { void 0; }
+            })();
+          }
+          if (currentAgent) {
+            scheduleConvRefresh(currentAgent.id);
+          }
         }
       }
     );
@@ -434,12 +505,11 @@ function App() {
         query: userText,
         inputs: inputs || {},
         conversation_id: currentConvId || undefined,
-        user: 'test-user',
         auto_generate_name: false,
       },
       event => {
-        if ((event as any)?.error || event.event === 'error') {
-          const raw = (event as any);
+        if ((event?.error) || event.event === 'error') {
+          const raw = event;
           const errMsg = raw?.error || raw?.message || raw?.detail || `HTTP ${raw?.status || ''}` || '未知错误';
           console.error('SSE error:', errMsg);
           setMessages(prev => [...prev, { role: 'ai', variants: [`抱歉，出错了：${errMsg}`], current: 0 }]);
@@ -452,8 +522,7 @@ function App() {
         if (event.conversation_id) {
           setCurrentConvId(event.conversation_id);
           if (!conversations.some(c => c.id === event.conversation_id)) {
-            fetchConversations(currentAgent.id, 'test-user').then(({ data }) => setConversations(data));
-            refreshAllConversations();
+            scheduleConvRefresh(currentAgent.id);
           }
         }
 
@@ -475,6 +544,16 @@ function App() {
           });
         }
 
+        if (event.event === 'message_end') {
+          setStreaming(false);
+          setStreamMode(null);
+          setRetryTarget(null);
+          if (currentAgent) {
+            scheduleConvRefresh(currentAgent.id);
+          }
+          return;
+        }
+
         if (event.event === 'end') {
           setStreaming(false);
           setStreamMode(null);
@@ -484,20 +563,10 @@ function App() {
     );
   };
 
-  const handleDeleteConversation = (convId: string) => {
-    if (!currentAgent) return;
-    deleteConversation(currentAgent.id, convId, 'test-user').then(() => {
-      setConversations(prev => prev.filter(c => c.id !== convId));
-      setAllConversations(prev => prev.filter(c => c.id !== convId));
-      if (currentConvId === convId) {
-        setCurrentConvId(null);
-        setMessages([]);
-      }
-    });
-  };
+  // 删除会话：使用统一的 deleteConv 实现
 
   const deleteConv = async (conv: UIConversation) => {
-    await deleteConversation(conv.agentId, conv.id, 'test-user');
+    await deleteConversation(conv.agentId, conv.id);
     if (currentAgent && currentAgent.id === conv.agentId) {
       setConversations(prev => prev.filter(c => c.id !== conv.id));
     }
@@ -522,7 +591,7 @@ function App() {
   const confirmRename = async () => {
     if (!renaming) return;
     const newName = renaming.name.trim();
-    await renameConversation(renaming.conv.agentId, renaming.conv.id, newName, false, 'test-user');
+    await renameConversation(renaming.conv.agentId, renaming.conv.id, newName, false);
     if (currentAgent && currentAgent.id === renaming.conv.agentId) {
       setConversations(prev => prev.map(c => c.id === renaming.conv.id ? { ...c, name: newName } : c));
     }
@@ -545,17 +614,10 @@ function App() {
           setCopied(prev => ({ ...prev, [index]: false }));
         }, 1200);
       }
-    } catch {}
+    } catch { /* noop */ }
   };
 
-  // 检测是否包含代码块：围栏 ```/~~~ 或行首 4+ 空格/Tab
-  const containsCodeBlock = (text: string): boolean => {
-    if (!text) return false;
-    if (text.includes('```') || text.includes('~~~')) return true;
-    // 行首缩进视为代码块（Markdown 缩进代码）
-    const indented = /(^|\n)[ \t]{4,}\S/.test(text);
-    return indented;
-  };
+  // 保留：若未来需要判断文本中是否包含代码块，可按需启用
 
   const convList: UIConversation[] = (
     currentAgent
@@ -565,6 +627,74 @@ function App() {
     .filter(c => !searchTerm || c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.agentName.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => (pinned.includes(b.id) ? 1 : 0) - (pinned.includes(a.id) ? 1 : 0));
 
+  if (!authed) {
+    return (
+      <div
+        className="login"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(17,18,19,0.6) 100%), url('${LOGIN_BG_URL}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="login-box">
+          <h2>欢迎使用北京师范大学智思体</h2>
+          <div className="field">
+            <label>用户名</label>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="" />
+          </div>
+          <div className="field">
+            <label>密码</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" />
+          </div>
+          {authError && <div className="error">{authError}</div>}
+          <div className="actions">
+            <button
+              className="btn primary"
+              onClick={async () => {
+                setAuthError(null);
+                const res = await login(username.trim(), password);
+                if (res?.token && res?.user) {
+                  setAuthToken(res.token, res.user);
+                  setAuthed(true);
+                  setAuthUser(res.user);
+                  setUsername('');
+                  setPassword('');
+                } else {
+                  setAuthError(res?.error ? String(res.error) : '登录失败');
+                }
+              }}
+            >登录</button>
+            <button
+              className="btn"
+              onClick={async () => {
+                setAuthError(null);
+                const u = username.trim();
+                const p = password;
+                if (!u || !p) { setAuthError('请填写用户名和密码'); return; }
+                const res = await register(u, p);
+                if (res?.ok) {
+                  const r2 = await login(u, p);
+                  if (r2?.token && r2?.user) {
+                    setAuthToken(r2.token, r2.user);
+                    setAuthed(true);
+                    setAuthUser(r2.user);
+                    setUsername('');
+                    setPassword('');
+                  } else {
+                    setAuthError('注册成功，但自动登录失败');
+                  }
+                } else {
+                  setAuthError(res?.error ? String(res.error) : '注册失败');
+                }
+              }}
+            >注册并登录</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={`layout ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <ConversationSidebar
@@ -591,21 +721,56 @@ function App() {
         }}
         onMore={(conv, rect) => setContextMenu({ x: rect.right, y: rect.bottom, conv })}
         onToggleSidebar={() => setSidebarOpen(s => !s)}
+        authUser={authUser}
+        onToggleTheme={() => {
+          const root = document.documentElement;
+          const isDark = root.classList.contains('theme-dark');
+          if (isDark) root.classList.remove('theme-dark');
+          else root.classList.add('theme-dark');
+        }}
+        onShowProfile={() => setShowProfile(true)}
       />
       <div className="chat">
         <div className="chat-inner">
           <div className="messages">
-          {!messages.length && (
-            <div className="empty-state">
+          {!messages.length && currentAgent && (
+            (() => {
+              const guide = getAgentGuide(currentAgent);
+              return (
+                <div className="guide">
+                  <div className="guide-title">{guide?.title || '-'}</div>
+                  <div className="guide-desc">{guide?.desc || ''}</div>
+                  <div className="guide-hints">
+                    {(guide?.hints || []).map((h, idx) => (
+                      <button key={idx} onClick={() => { setQuery(h); requestAnimationFrame(() => send()); }}>{h}</button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()
+          )}
+          {!messages.length && !currentAgent && (
+            <div className={`empty-state ${(!currentAgent || !agents.some(a => a.hasKey) || !agents.length) ? 'show-tips' : ''}`}>
               <img src={LOGO_URL} alt="logo" />
+              {!agents.length && <div className="brand">正在加载...</div>}
+              {!!agents.length && !agents.some(a => a.hasKey) && <div className="brand">暂无可用Agent，请联系管理员配置 API Key</div>}
+              {!currentAgent && agents.some(a => a.hasKey) && <div className="brand">左侧选择 Agent 即可新建对话</div>}
+              {agentsError && <div className="brand">智能体加载失败，请确认服务已启动或网络正常</div>}
             </div>
           )}
+          <div className="auth-bar" style={{ display: 'none' }} />
           {messages.map((msg, i) => (
             msg.role === 'user' ? (
-              <div key={i} className={`message ${msg.role}`}>
-                <div className={`bubble ${msg.role}`}>
-                  {/* 用户消息始终原样显示，确保缩进与换行不变 */}
-                  <MarkdownRenderer text={getMessageText(msg)} verbatim={true} />
+              <div key={i} className="message user">
+                <div className="user-row">
+                  <div className="user-actions left">
+                    <button title="复制" onClick={() => handleCopy(getMessageText(msg), i)}><CopyIcon /></button>
+                    <button title="编辑" onClick={() => setRenaming({ conv: { id: currentConvId || '', name: getMessageText(msg), agentId: currentAgent?.id || '', agentName: currentAgent?.name || '' }, name: getMessageText(msg) })}><PencilIcon /></button>
+                  </div>
+                  <div className="bubble user">
+                    <MarkdownRenderer text={getMessageText(msg)} verbatim={true} />
+                  </div>
+                  <div className="user-avatar">U</div>
                 </div>
               </div>
             ) : (
@@ -706,9 +871,9 @@ function App() {
           <div ref={messagesEndRef} />
           </div>
           <div className="composer">
-          {Array.isArray(parameters?.user_input_form) && parameters!.user_input_form.some((f: any) => !!f?.required) && (
+          {Array.isArray(parameters?.user_input_form) && parameters!.user_input_form.some((f: { required?: boolean }) => !!f?.required) && (
             <div className="param-form">
-              {parameters!.user_input_form.filter((f: any) => !!f?.required).map((f: any) => (
+              {parameters!.user_input_form.filter((f: { required?: boolean }) => !!f?.required).map((f: { variable: string; label?: string; required?: boolean }) => (
                 <div key={f.variable} className="param-field">
                   <label>{(f.label || f.variable) + (f.required ? ' *' : '')}</label>
                   <input
@@ -793,6 +958,7 @@ function App() {
               }}
             />
           </div>
+          <div className="composer-note">该版本智思体尚在测试之中，回答未必准确</div>
           </div>
         </div>
       </div>
@@ -820,6 +986,41 @@ function App() {
               <button onClick={() => { deleteConv(contextMenu.conv); setContextMenu(null); }}>删除</button>
             </>
           )}
+        </div>
+      )}
+      {showProfile && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowProfile(false)}>
+          <div style={{ width: 420, background: 'var(--main-bg)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 16 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0 }}>用户信息</h3>
+              <button className="icon-button" onClick={() => setShowProfile(false)}>×</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+              <div className="user-avatar">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M4 21c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14 }}>{authUser || '-'}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>已登录</div>
+              </div>
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowProfile(false);
+                  logout();
+                  setAuthed(false);
+                  setAuthUser(null);
+                  setAgents([]);
+                  setCurrentAgent(null);
+                  setConversations([]);
+                  setMessages([]);
+                }}
+              >切换用户</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -17,15 +17,13 @@ const MarkdownBlock: React.FC<MarkdownBlockProps> = ({ children }) => {
     <ReactMarkdown
       children={children}
       components={{
-        code({ node, className, children, ...props }) {
+        code({ className, children, ...props }: { className?: string; children?: React.ReactNode }) {
           const lang = extractLang(className);
           return (
             <div className="code-block-wrapper">
               {lang && <div className="code-lang-label">{lang}</div>}
               <pre className="code-block">
-                <code className={className} {...props}>
-                  {children}
-                </code>
+                <code className={className} {...props}>{children}</code>
               </pre>
             </div>
           );

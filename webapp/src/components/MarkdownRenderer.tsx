@@ -120,7 +120,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch { /* noop */ }
   };
   return (
     <div className="mdr-block">
@@ -139,15 +139,15 @@ export default function MarkdownRenderer({ text, verbatim }: Props) {
     <ReactMarkdown
       components={{
         // 移除 react-markdown 默认在代码块外包裹的 <pre>
-        pre({ children }: any) {
+        pre({ children }: { children?: React.ReactNode }) {
           return <>{children}</>;
         },
         // 正确区分行内代码与块级代码：
         // - 行内（`...` 或 ``...``）始终渲染为行内代码
         // - 仅当是带语言标记的 fenced 代码块，或内容包含换行时，才渲染为代码块
         //   这样可以避免缩进触发的“伪代码块”误判。
-        code({ inline, className, children }: { inline?: boolean; className?: string; children?: any }) {
-          const raw = String(children || '').replace(/\n$/, '');
+        code({ inline, className, children }: { inline?: boolean; className?: string; children?: React.ReactNode }) {
+          const raw = String(children ?? '').replace(/\n$/, '');
           const cls = className || '';
           const m = cls.match(/language-(\w+)/);
           const lang = m ? m[1] : 'plaintext';

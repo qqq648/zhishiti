@@ -1,6 +1,10 @@
-import React from 'react';
+import { useState } from 'react';
 import type { Agent, Conversation } from '../api';
 import './ConversationSidebar.css';
+import iconJiaowu from '../../picture/教务.svg';
+import iconTuijian from '../../picture/检索.svg';
+import iconZhujiao from '../../picture/助教.svg';
+import iconWenxian from '../../picture/文献.svg';
 
 export type UIConversation = Conversation & { agentId: string; agentName: string };
 
@@ -20,6 +24,9 @@ type Props = {
   onSelectConversation: (conv: UIConversation) => void;
   onMore: (conv: UIConversation, rect: DOMRect) => void;
   onToggleSidebar: () => void;
+  authUser?: string | null;
+  onToggleTheme?: () => void;
+  onShowProfile?: () => void;
 };
 
 const MenuIcon = () => (
@@ -37,20 +44,7 @@ const SearchIcon = () => (
   </svg>
 );
 
-const PenSquareIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
-    <path d="M8 16L16.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M8 16H11L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
 
-const AgentIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
 
 const DotsIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -83,7 +77,22 @@ export default function ConversationSidebar(props: Props) {
     onSelectConversation,
     onMore,
     onToggleSidebar,
+    authUser,
+    onToggleTheme,
+    onShowProfile,
   } = props;
+
+  const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
+
+  const getAgentIcon = (id: string) => {
+    switch (id) {
+      case 'jiaowu': return iconJiaowu;
+      case 'tuijian': return iconTuijian;
+      case 'zhujiao': return iconZhujiao;
+      case 'wenxian': return iconWenxian;
+      default: return iconJiaowu;
+    }
+  };
 
   return (
     <aside className="sidebar" aria-label="对话侧栏">
@@ -96,12 +105,7 @@ export default function ConversationSidebar(props: Props) {
         </button>
       </div>
 
-      <div className="sidebar-actions">
-        <button className="btn new-chat" onClick={onNewChat} aria-label="新建对话">
-          <PenSquareIcon />
-          <span>新建对话</span>
-        </button>
-      </div>
+      {/* 移除顶栏的新建对话按钮；改为在 Agent 项上提供新建入口 */}
 
       {showSearch && (
         <div className="sidebar-search">
@@ -117,15 +121,31 @@ export default function ConversationSidebar(props: Props) {
         <h3>Agents</h3>
         <div className="agent-list">
           {agents.map((agent) => (
-            <button
+            <div
               key={agent.id}
-              className={`agent ${currentAgent?.id === agent.id ? 'active' : ''}`}
-              onClick={() => onSelectAgent(agent)}
-              disabled={!agent.hasKey}
+              className={`agent-item ${expandedAgentId === agent.id ? 'expanded' : ''}`}
+              onMouseLeave={() => setExpandedAgentId(null)}
             >
-              <AgentIcon />
-              <span>{agent.name}</span>
-            </button>
+              <button
+                className="agent"
+                onClick={() => { onSelectAgent(agent); setExpandedAgentId(agent.id); }}
+                disabled={!agent.hasKey}
+              >
+                <img className="agent-icon" src={getAgentIcon(agent.id)} alt={agent.name} />
+                <span>{agent.name}</span>
+              </button>
+              {agent.hasKey && expandedAgentId === agent.id && (
+                <div className="agent-actions" aria-hidden={expandedAgentId !== agent.id}>
+                  <button
+                    className="new-chat"
+                    title="新建对话"
+                    onClick={() => { onSelectAgent(agent); onNewChat(); setExpandedAgentId(null); }}
+                  >
+                    新建对话
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </div>
@@ -133,14 +153,14 @@ export default function ConversationSidebar(props: Props) {
       <div className="conversations">
         <h3>Conversations</h3>
         <ul>
-          {convList.map((conv, index) => (
-            <li key={`${conv.id}-${index}`} className={currentConvId === conv.id ? 'active' : ''}>
+          {convList.map((conv) => (
+            <li key={conv.id} className={currentConvId === conv.id ? 'active' : ''}>
               <button
                 className="conv"
                 onClick={() => onSelectConversation(conv)}
                 aria-label={`打开会话 ${conv.name}`}
               >
-                {conv.name}{!currentAgent || currentAgent.id !== conv.agentId ? ` · ${conv.agentName}` : ''}
+                {(conv.name || '未命名')}{!currentAgent || currentAgent.id !== conv.agentId ? ` · ${conv.agentName}` : ''}
               </button>
               <div className="conv-actions" aria-hidden={!pinned.includes(conv.id)}>
                 {pinned.includes(conv.id) && (
@@ -162,6 +182,20 @@ export default function ConversationSidebar(props: Props) {
             </li>
           ))}
         </ul>
+      </div>
+      <div className="sidebar-footer">
+        <button className="icon-button" title="切换主题" onClick={onToggleTheme} aria-label="切换主题">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button className="user-avatar" title="用户信息" onClick={onShowProfile} aria-label="用户信息">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+            <path d="M4 21c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <span className="sidebar-user">{authUser || '-'}</span>
       </div>
     </aside>
   );

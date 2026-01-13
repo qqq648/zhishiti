@@ -62,6 +62,7 @@
 }
 
 .agent-list { display: flex; flex-direction: column; gap: 8px; }
+.agent-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .agent {
   padding: 10px 12px;
   border: 1px solid transparent;
@@ -76,9 +77,27 @@
   align-items: center;
   gap: 12px;
 }
+.agent .agent-icon { width: 22px; height: 22px; display: block; }
 .agent:hover { background-color: #e8f0fe; }
 .agent.active { background-color: #e8f0fe; border-color: var(--primary-color); font-weight: 500; }
 .agent:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 行内的新建对话按钮，采用主题主色、圆角胶囊，紧凑尺寸 */
+.agent-actions { display: flex; align-items: center; }
+.agent-actions .new-chat {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--user-bubble-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+}
+.agent-actions .new-chat:hover { opacity: .9; }
+/* 仅当当前行被选中时，右侧新建入口才显示 */
+.agent-item .agent-actions { display: none; }
+.agent-item.expanded .agent-actions { display: flex; }
 
 /* 会话列表：稳定的悬停，无宽度变化，无浮动效果 */
 .conversations ul {
@@ -156,6 +175,44 @@
   outline-offset: 2px;
 }
 
+/* 底部用户与主题切换区 */
+.sidebar-footer {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+.sidebar-footer .user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.sidebar-footer .icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.sidebar-footer .sidebar-user {
+  margin-left: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  justify-self: end;
+}
 /* 响应式：窄屏压缩为更紧凑的内边距与字体 */
 @media (max-width: 768px) {
   .sidebar { width: 220px; padding: 12px; }

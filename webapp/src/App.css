@@ -7,6 +7,19 @@
   --primary-color: #1a73e8;
   --user-bubble-bg: #e8f0fe;
   --ai-bubble-bg: #f8f9fa;
+  --app-bg: #f0f4f9;
+}
+
+.theme-dark {
+  --border-color: #2b2c2e;
+  --sidebar-bg: #121315;
+  --main-bg: #0f1012;
+  --text-primary: #f5f5f7;
+  --text-secondary: #9b9ba0;
+  --primary-color: #0a84ff;
+  --user-bubble-bg: #0f2237;
+  --ai-bubble-bg: #121315;
+  --app-bg: #0b0c0e;
 }
 
 /* 代码块现代暗色主题 + 语言标签 */
@@ -296,6 +309,103 @@ html, body, #root {
   position: relative; /* 允许内部空白页水印绝对居中覆盖 */
 }
 
+.login {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #0a0a0a 0%, #111213 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.login-box {
+  width: 420px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 28px 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.40);
+  backdrop-filter: blur(18px);
+  color: #eaeaea;
+}
+.login-box h2 {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  color: #f5f5f7;
+}
+.login-box .field { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.login-box .field label {
+  font-size: 12px;
+  color: #9b9ba0;
+}
+.login-box .field input {
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  color: #f5f5f7;
+  outline: none;
+  transition: border-color .2s, background .2s;
+}
+.login-box .field input::placeholder {
+  color: transparent; /* 去掉占位文字可见性 */
+}
+.login-box .field input:focus {
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.10);
+}
+.login-box .actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.login-box .btn {
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: #2d2e30;
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: transform .05s ease-out, opacity .2s;
+}
+.login-box .btn:hover { opacity: .9; }
+.login-box .btn:active { transform: scale(.98); }
+.login-box .btn.primary {
+  background: #0071e3; /* macOS 蓝 */
+  color: #fff;
+}
+.login-box .error {
+  color: #ff453a; /* Apple 红 */
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: var(--text-secondary);
+}
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  transition: background .2s, border-color .2s;
+}
+.user-avatar:hover {
+  background: rgba(0,0,0,0.12);
+  border-color: var(--primary-color);
+}
 /* Markdown code block styling */
 .messages pre {
   background: #f5f7fa;
@@ -310,8 +420,9 @@ html, body, #root {
 }
 
 .message {
-  margin-bottom: 16px; /* 全局统一为 16px */
+  margin-bottom: 24px;
   display: flex;
+  width: 100%;
 }
 
 .bubble {
@@ -325,7 +436,7 @@ html, body, #root {
 .bubble.user {
   background-color: var(--user-bubble-bg);
   color: var(--text-primary);
-  margin-left: auto;
+  margin-left: 0;
   /* 去除额外右侧留白，使右边缘贴近内容边界 */
   margin-right: 0;
   border-bottom-right-radius: 4px;
@@ -333,6 +444,7 @@ html, body, #root {
   max-width: 66%;
   /* 保留用户文本中的换行和空格格式 */
   white-space: pre-wrap;
+  position: relative;
 }
 
 /* 确保代码块仍按预格式显示，不受父级 white-space 影响 */
@@ -353,8 +465,10 @@ html, body, #root {
   border-bottom-left-radius: 4px;
 }
 
-.message.ai { gap: 12px; }
+.message.ai { gap: 12px; justify-content: flex-start; }
+.message.user { justify-content: flex-end; }
 .ai-row { display: flex; align-items: flex-start; gap: 12px; }
+.user-row { display: flex; align-items: flex-start; gap: 12px; justify-content: flex-end; }
 .ai-avatar {
   width: 36px;
   height: 36px;
@@ -368,6 +482,24 @@ html, body, #root {
   /* 轻微下移，使头像上边缘与文本上边缘齐平 */
   margin-top: 2px;
 }
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e8f0fe;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.user-content { 
+  max-width: 66%; 
+  display: flex; 
+  justify-content: flex-end; 
+}
+.user-content .bubble.user { margin-left: 0; }
 .ai-content {
   /* 让 AI 内容更靠近右边界（减去头像与间距共 48px） */
   max-width: calc(100% - 48px);
@@ -389,6 +521,40 @@ html, body, #root {
   visibility: visible;
   pointer-events: auto;
 }
+
+/* 用户消息的悬停操作（复制、编辑） */
+.user-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  height: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .18s ease, visibility .18s;
+  pointer-events: none;
+  justify-content: flex-start;
+}
+.user-actions.left { margin-right: 6px; }
+.message.user:hover .user-actions {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.user-actions button {
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 5px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+.user-actions button:hover { background: #f0f2f5; }
+.user-actions button svg { width: 14px; height: 14px; display: block; }
 .ai-actions.hidden {
   opacity: 0 !important;
   visibility: hidden !important;
@@ -443,26 +609,27 @@ html, body, #root {
 }
 
 .composer {
-  position: sticky; /* 固定在滚动容器底部 */
+  position: sticky;
   bottom: 0;
   z-index: 5;
-  padding: 4px 6px; /* 更紧凑，使消息与输入框间距更小 */
+  padding: 16px 12px;
   background-color: var(--main-bg);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .composer-box {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #fff;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--main-bg);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
 }
 
 .composer-box input {
@@ -557,15 +724,19 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   pointer-events: none; /* 不影响页面交互 */
-  opacity: 0.18; /* 低透明度 */
+  opacity: 0.35; /* 提升可见性，避免“空白感” */
 }
 .empty-state img {
   width: 240px;
   height: auto;
 }
 .empty-state .brand {
-  display: none; /* 需求：先不要文案 */
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: none;
 }
+.empty-state.show-tips .brand { display: block; }
 .context-menu button:hover { background: #f5f7fa; }
 .icon-button {
   background: transparent;
@@ -590,15 +761,16 @@ html, body, #root {
 .plus-button:hover { background-color: #f0f0f0; }
 
 .send-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
   border: none;
-  background: #000;
+  background: linear-gradient(180deg, #8ab4f8 0%, #7aa2f6 100%);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 .send-button:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -608,12 +780,53 @@ html, body, #root {
 
 /* Input composer rounded rectangle per design */
 .composer-box {
-  gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid #ddd;
-  border-radius: 28px;
-  min-height: 44px;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 9999px;
+  min-height: 56px;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.10);
+  backdrop-filter: blur(16px) saturate(120%);
 }
+
+/* 引导卡样式：在新建对话时显示 */
+.guide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.guide-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+.guide-desc {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.guide-hints {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.guide-hints button {
+  border: 1px solid var(--border-color);
+  background: var(--main-bg);
+  color: var(--text-primary);
+  border-radius: 9999px;
+  padding: 10px 14px;
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.guide-hints button:hover { background: #f5f7fa; }
 .composer input {
   padding: 0;
   border: none;
@@ -624,20 +837,43 @@ html, body, #root {
 .composer .send-button {
   width: 40px;
   height: 40px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.16);
+  background: linear-gradient(180deg, #9ec5ff 0%, #7aa2f6 100%);
+  color: #fff;
 }
 /* Input width to 2/3 of row */
-.composer {
-  justify-content: center;
-}
+.composer { justify-content: center; }
 .composer-box {
-  width: 80%; /* 扩大输入框显示区域 */
+  width: min(860px, 90vw);
 }
 /* Remove blue-like hover for plus/mic inside composer */
 .plus-button { border-radius: 8px; }
 .plus-button:hover { background-color: #e0e0e0; }
 .composer .icon-button { background: transparent; }
 .composer .icon-button:hover { background: #e0e0e0; }
+.composer textarea {
+  flex: 1;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+.composer textarea::placeholder {
+  color: var(--text-secondary);
+}
+.composer-note {
+  width: min(860px, 90vw);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 6px 0 12px;
+  padding: 0;
+  align-self: center;
+  display: block;
+}
 /* Conversation actions visibility */
 .conv-actions { 
   display: none; 

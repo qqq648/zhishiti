@@ -9,6 +9,7 @@ import { Readable } from 'node:stream';
 import http from 'node:http';
 import https from 'node:https';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 // try multiple .env locations to accommodate different setups
 dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +19,12 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+app.use((req, _res, next) => {
+  try {
+    console.log('[req]', req.method, req.url);
+  } catch {}
+  next();
+});
 
 const LOG_FILE = '/tmp/proxy.log';
 function log(tag, payload) {
@@ -28,6 +35,95 @@ function log(tag, payload) {
     // ignore logging errors
   }
 }
+
+const USERS_FILE = path.resolve(__dirname, 'users.json');
+const AUTH_SECRET = process.env.AUTH_SECRET || 'dev-secret';
+
+function readUsers() {
+  try {
+    const s = fs.readFileSync(USERS_FILE, 'utf8');
+    return JSON.parse(s);
+  } catch {
+    return [];
+  }
+}
+function writeUsers(list) {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(list), 'utf8');
+  } catch {}
+}
+function hashPassword(p, salt) {
+  return crypto.createHash('sha256').update(String(p) + String(salt)).digest('hex');
+}
+function ensureUsers() {
+  if (!fs.existsSync(USERS_FILE)) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = hashPassword('123456', salt);
+    writeUsers([{ username: 'BNU001', salt, hash }]);
+  }
+}
+function verifyPassword(user, pass) {
+  const h = hashPassword(pass, user.salt);
+  return h === user.hash;
+}
+function signToken(u) {
+  const payload = { u, iat: Date.now(), exp: Date.now() + 12 * 60 * 60 * 1000 };
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', AUTH_SECRET).update(data).digest('base64url');
+  return `${data}.${sig}`;
+}
+function verifyToken(t) {
+  if (!t) return null;
+  const parts = String(t).split('.');
+  if (parts.length !== 2) return null;
+  const [data, sig] = parts;
+  const expect = crypto.createHmac('sha256', AUTH_SECRET).update(data).digest('base64url');
+  if (sig !== expect) return null;
+  try {
+    const obj = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
+    if (obj.exp && obj.exp < Date.now()) return null;
+    return obj.u;
+  } catch {
+    return null;
+  }
+}
+ensureUsers();
+
+const authRouter = express.Router();
+authRouter.post('/login', (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'invalid' });
+  const list = readUsers();
+  const found = list.find((u) => u.username === String(username));
+  if (!found) return res.status(401).json({ error: 'invalid_credentials' });
+  if (!verifyPassword(found, String(password))) return res.status(401).json({ error: 'invalid_credentials' });
+  const token = signToken(found.username);
+  res.json({ token, user: found.username });
+});
+authRouter.post('/register', (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'invalid' });
+  const list = readUsers();
+  if (list.find((u) => u.username === String(username))) return res.status(409).json({ error: 'user_exists' });
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = hashPassword(String(password), salt);
+  list.push({ username: String(username), salt, hash });
+  writeUsers(list);
+  res.json({ ok: true });
+});
+app.use('/auth', authRouter);
+// 兜底：确保 /auth/login 与 /auth/register 可直接匹配
+app.post('/auth/login', (req, res) => authRouter.handle(req, res));
+app.post('/auth/register', (req, res) => authRouter.handle(req, res));
+function requireAuth(req, res, next) {
+  const h = req.headers['authorization'] || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : '';
+  const u = verifyToken(token);
+  if (!u) return res.status(401).json({ error: 'unauthorized' });
+  req.authUser = u;
+  next();
+}
+app.use('/api', requireAuth);
 
 // Agents configuration: env var names
 const AGENT_CONFIG = [
@@ -67,7 +163,7 @@ app.get('/api/:agent/conversations', async (req, res) => {
   const agent = getAgent(req.params.agent);
   if (!agent) return res.status(400).json({ error: 'invalid_agent_or_missing_key' });
   const url = new URL(BASE_URL + '/conversations');
-  if (req.query.user) url.searchParams.set('user', req.query.user);
+  url.searchParams.set('user', req.authUser);
   if (req.query.last_id) url.searchParams.set('last_id', req.query.last_id);
   if (req.query.limit) url.searchParams.set('limit', req.query.limit);
   if (req.query.sort_by) url.searchParams.set('sort_by', req.query.sort_by);
@@ -88,7 +184,7 @@ app.get('/api/:agent/messages', async (req, res) => {
   if (!agent) return res.status(400).json({ error: 'invalid_agent_or_missing_key' });
   const url = new URL(BASE_URL + '/messages');
   if (req.query.conversation_id) url.searchParams.set('conversation_id', req.query.conversation_id);
-  if (req.query.user) url.searchParams.set('user', req.query.user);
+  url.searchParams.set('user', req.authUser);
   if (req.query.first_id) url.searchParams.set('first_id', req.query.first_id);
   if (req.query.limit) url.searchParams.set('limit', req.query.limit);
   try {
@@ -109,8 +205,9 @@ app.post('/api/:agent/chat-messages', async (req, res) => {
   const body = req.body || {};
   // Ensure inputs exists per API contract
   if (!body.inputs) body.inputs = {};
+  body.user = req.authUser;
   const responseMode = body.response_mode || 'streaming';
-  delete body.response_mode; // Remove the problematic field
+  delete body.response_mode; // 移除原字段，后续按实际模式显式传递
 
   const headers = {
     Authorization: `Bearer ${agent.key}`,
@@ -215,7 +312,9 @@ app.post('/api/:agent/chat-messages', async (req, res) => {
       try {
         console.log('[proxy] blocking begin', { url: BASE_URL + '/chat-messages' });
         log('chat-messages.blocking.begin', { url: BASE_URL + '/chat-messages' });
-        const resp = await axios.post(BASE_URL + '/chat-messages', body, { headers });
+        // 阻塞模式必须显式传递 response_mode=blocking，避免上游默认流式导致 400
+        const payload = { ...body, response_mode: responseMode || 'blocking' };
+        const resp = await axios.post(BASE_URL + '/chat-messages', payload, { headers });
         console.log('[proxy] blocking ok', resp.status);
         log('chat-messages.blocking.ok', { status: resp.status });
         res.status(resp.status).json(resp.data);
@@ -263,7 +362,7 @@ app.delete('/api/:agent/conversations/:conversation_id', async (req, res) => {
         Authorization: `Bearer ${agent.key}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ user: req.query.user || req.body?.user }),
+      body: JSON.stringify({ user: req.authUser }),
     });
     if (resp.status === 204) return res.status(204).end();
     const json = await resp.json();
@@ -293,7 +392,7 @@ app.get('/api/:agent/messages/:message_id/suggested', async (req, res) => {
   const agent = getAgent(req.params.agent);
   if (!agent) return res.status(400).json({ error: 'invalid_agent_or_missing_key' });
   const url = new URL(BASE_URL + `/messages/${req.params.message_id}/suggested`);
-  if (req.query.user) url.searchParams.set('user', req.query.user);
+  url.searchParams.set('user', req.authUser);
   try {
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${agent.key}` } });
     const json = await resp.json();
@@ -311,7 +410,7 @@ app.post('/api/:agent/conversations/:conversation_id/name', async (req, res) => 
     const resp = await fetch(BASE_URL + `/conversations/${req.params.conversation_id}/name`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${agent.key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body || {}),
+      body: JSON.stringify({ ...(req.body || {}), user: req.authUser }),
     });
     const json = await resp.json();
     res.status(resp.status).json(json);
@@ -321,6 +420,9 @@ app.post('/api/:agent/conversations/:conversation_id/name', async (req, res) => 
 });
 
 const PORT = process.env.PORT || 3000;
+app.get('/', (req, res) => {
+  res.status(200).json({ ok: true, service: 'webapp-proxy', endpoints: ['POST /auth/login', 'POST /auth/register', 'GET /api/agents'] });
+});
 app.listen(PORT, () => {
   console.log(`Proxy server listening on http://localhost:${PORT}`);
 });

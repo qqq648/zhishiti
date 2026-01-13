@@ -5,6 +5,6 @@ html, body {
 }
 
 body {
-  background: #f0f4f9;
-  color: #1f1f1f;
+  background: var(--app-bg);
+  color: var(--text-primary);
 }
